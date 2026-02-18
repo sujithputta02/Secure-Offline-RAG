@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure ISRO RAG System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #0056b3;
+        }
+
+        .role-selector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chat-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            height: 400px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+            background-color: #fafafa;
+            border-radius: 4px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .user-msg {
+            background-color: #e1f5fe;
+            text-align: right;
+        }
+
+        .system-msg {
+            background-color: #e8f5e9;
+            text-align: left;
+        }
+
+        .typing-indicator {
+            background-color: #f0f0f0;
+            padding: 10px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #888;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+            margin: 0 2px;
+        }
+
+        .typing-indicator span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #004494;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>🚀 ISRO Secure Knowledge Assistant</h1>
+
+        <div class="role-selector">
+            <label for="role">Select Role:</label>
+            <select id="role">
+                <option value="Public">Public User</option>
+                <option value="Scientist">Scientist</option>
+                <option value="Engineer">Engineer</option>
+                <option value="Analyst">Mission Analyst</option>
+            </select>
+        </div>
+
+        <div class="chat-box" id="chat-box">
+            <!-- Messages will appear here -->
+            <div class="message system-msg">Hello! I am the Secure ISRO RAG Assistant. Ask me about missions, launch
+                vehicles, or engines.</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="query-input" placeholder="Ask a question..." onkeypress="handleEnter(event)">
+            <button onclick="sendQuery()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendQuery() {
+            const queryInput = document.getElementById('query-input');
+            const roleSelect = document.getElementById('role');
+            const chatBox = document.getElementById('chat-box');
+
+            const query = queryInput.value.trim();
+            const role = roleSelect.value;
+
+            if (!query) return;
+
+            // User Message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'message user-msg';
+            userDiv.textContent = `[${role}] ${query}`;
+            chatBox.appendChild(userDiv);
+
+            queryInput.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Thinking Message (Three Dots)
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'message typing-indicator';
+            thinkingDiv.innerHTML = '<span></span><span></span><span></span>';
+            chatBox.appendChild(thinkingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, role: role })
+                });
+
+                // Remove Thinking Message
+                if (thinkingDiv.parentNode === chatBox) {
+                    chatBox.removeChild(thinkingDiv);
+                }
+
+                // Create System Message Container
+                const sysDiv = document.createElement('div');
+                sysDiv.className = 'message system-msg';
+                chatBox.appendChild(sysDiv);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                const charQueue = [];
+                let isStreaming = true;
+
+                // Typing Loop
+                const typeChar = () => {
+                    if (charQueue.length > 0) {
+                        sysDiv.textContent += charQueue.shift();
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                        setTimeout(typeChar, 10); // Adjust speed here (lower is faster)
+                    } else if (!isStreaming) {
+                        return; // Done
+                    } else {
+                        setTimeout(typeChar, 50); // Wait for more data
+                    }
+                };
+                typeChar(); // Start typer
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        isStreaming = false;
+                        break;
+                    }
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    for (let char of chunk) {
+                        charQueue.push(char);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+
+                // Remove Thinking Message if it exists
+                if (thinkingDiv.parentNode === chatBox) {
+                    chatBox.removeChild(thinkingDiv);
+                }
+
+                const errDiv = document.createElement('div');
+                errDiv.className = 'message system-msg';
+                errDiv.style.backgroundColor = '#ffebee';
+                errDiv.textContent = "Error connecting to server.";
+                chatBox.appendChild(errDiv);
+            }
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') {
+                sendQuery();
+            }
+        }
+    </script>
+
+</body>
+
+</html>

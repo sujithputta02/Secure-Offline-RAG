@@ -1,0 +1,16 @@
+--- Starting Latency Test ---
+
+1. Cold Start (Loading Model & Index)...
+   Time taken: 14.1024 seconds
+   Results found: 3
+
+2. Warm Start (Cached)...
+   Run 1: 0.0208 seconds
+   Run 2: 0.0217 seconds
+   Run 3: 0.0208 seconds
+   Run 4: 0.0216 seconds
+   Run 5: 0.0206 seconds
+
+Average Warm Latency: 0.0211 seconds
+
+[SUCCESS]: Caching is working! Response is instant.
