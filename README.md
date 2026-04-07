@@ -1,7 +1,7 @@
 # Secure ISRO RAG System
 
 ## Overview
-This is an offline, secure, graph-augmented Retrieval-Augmented Generation (RAG) system designed for ISRO domain documents. It combines Vector Search (FAISS) with Knowledge Graph (Neo4j) validation to reduce hallucinations and enforce Role-Based Access Control (RBAC).
+This is an offline, secure, graph-augmented Retrieval-Augmented Generation (RAG) system designed for Space Agency domain documents. It combines Vector Search (FAISS) with Knowledge Graph (Neo4j) validation to reduce hallucinations and enforce Role-Based Access Control (RBAC).
 
 ## Features
 - **Offline Capability**: Runs locally without external API calls.
